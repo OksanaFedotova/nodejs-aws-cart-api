@@ -8,32 +8,31 @@ import { contentSecurityPolicy } from 'helmet';
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
-  validateUser(name: string, password: string): any {
-    const user = this.usersService.findOne(name);
-
-    if (user) {
+ async validateUser(username: string, password: string) {
+    const user = await this.usersService.findOne(username);
+    if (user && user.password === password) {
       return user;
     }
 
-    return this.usersService.createOne({ name, password })
+    return this.usersService.create({ username, password });
   }
 
-  login(user: User, type) {
+  login(user: User, type: string) {
     const LOGIN_MAP = {
-      jwt: this.loginJWT,
-      basic: this.loginBasic,
-      default: this.loginJWT,
-    }
-    const login = LOGIN_MAP[ type ]
+      jwt: () => this.loginJWT(user),
+      basic: () => this.loginBasic(user),
+      default: () => this.loginJWT(user),
+    };
+    const login = LOGIN_MAP[type];
 
-    return login ? login(user) : LOGIN_MAP.default(user);
+    return login ? login() : LOGIN_MAP.default();
   }
 
   loginJWT(user: User) {
-    const payload = { username: user.name, sub: user.id };
+    const payload = { username: user.username, sub: user.id };
 
     return {
       token_type: 'Bearer',
@@ -42,8 +41,6 @@ export class AuthService {
   }
 
   loginBasic(user: User) {
-    // const payload = { username: user.name, sub: user.id };
-    console.log(user);
 
     function encodeUserToken(user) {
       const { id, name, password } = user;
@@ -57,7 +54,4 @@ export class AuthService {
       access_token: encodeUserToken(user),
     };
   }
-
-
-
 }
