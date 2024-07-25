@@ -4,7 +4,10 @@ import { Cart } from './cart.entity';
 @Entity('cart_items')
 export class CartItem {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id?: string;
+
+  @Column({ type: 'uuid' })
+  cart_id: string;
 
   @Column({ type: 'uuid' })
   product_id: string;
@@ -13,5 +16,5 @@ export class CartItem {
   count: number;
 
   @ManyToOne(() => Cart, (cart) => cart.items)
-  cart: Cart;
+  cart?: Cart;
 }

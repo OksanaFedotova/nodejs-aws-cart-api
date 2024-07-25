@@ -10,41 +10,27 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 
-// import { BasicAuthGuard, JwtAuthGuard } from '../auth';
-import { OrderService } from '../order';
+import { JwtAuthGuard } from '../auth';
+import { OrderService } from '../order/services';
 import { AppRequest, getUserIdFromRequest } from '../shared';
 
 import { calculateCartTotal } from './models-rules';
 import { CartService } from './services';
 import { Cart } from './models';
+import { CartStatus } from 'src/database/entities/cart.entity';
 
-@Controller('api/carts')
-export class CartsController {
-  constructor(private readonly cartService: CartService) {}
-
-  @Get()
-  async findAll(): Promise<Cart[]> {
-    return this.cartService.findAll();
-  }
-   @Get('cart-items') 
-     async findAllItems(): Promise<Cart[]> {
-    return this.cartService.findAll();
-  }
-}
 @Controller('api/profile/cart')
 export class CartController {
   constructor(
-    private cartService: CartService,
-    private orderService: OrderService,
+    private readonly cartService: CartService,
+    private readonly orderService: OrderService,
   ) {}
 
-  // @UseGuards(JwtAuthGuard)
-  // @UseGuards(BasicAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get()
-  findUserCart(@Req() req: AppRequest) {
-    const cart = this.cartService.findOrCreateByUserId(
-      getUserIdFromRequest(req),
-    );
+  async findUserCart(@Req() req: AppRequest) {
+    const userId = getUserIdFromRequest(req);
+    const cart = await this.cartService.findOrCreateByUserId(userId);
     return {
       statusCode: HttpStatus.OK,
       message: 'OK',
@@ -52,16 +38,11 @@ export class CartController {
     };
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @UseGuards(BasicAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Put()
-  updateUserCart(@Req() req: AppRequest, @Body() body) {
-    // TODO: validate body payload...
-    const cart = this.cartService.updateByUserId(
-      getUserIdFromRequest(req),
-      body,
-    );
-
+  async updateUserCart(@Req() req: AppRequest, @Body() body) {
+    const userId = getUserIdFromRequest(req);
+    const cart = await this.cartService.updateByUserId(userId, body) as unknown as Cart;
     return {
       statusCode: HttpStatus.OK,
       message: 'OK',
@@ -72,11 +53,11 @@ export class CartController {
     };
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @UseGuards(BasicAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete()
-  clearUserCart(@Req() req: AppRequest) {
-    this.cartService.removeByUserId(getUserIdFromRequest(req));
+  async clearUserCart(@Req() req: AppRequest) {
+    const userId = getUserIdFromRequest(req);
+    await this.cartService.removeByUserId(userId);
 
     return {
       statusCode: HttpStatus.OK,
@@ -84,38 +65,55 @@ export class CartController {
     };
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @UseGuards(BasicAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('checkout')
-  checkout(@Req() req: AppRequest, @Body() body) {
+  async checkout(@Req() req: AppRequest, @Body() body) {
     const userId = getUserIdFromRequest(req);
-    const cart = this.cartService.findByUserId(userId);
 
-    if (!(cart && cart.items.length)) {
-      const statusCode = HttpStatus.BAD_REQUEST;
-      req.statusCode = statusCode;
+    const queryRunner = this.cartService.dataSource.createQueryRunner();
+    await queryRunner.startTransaction();
+
+    try {
+      const cart = await this.cartService.findByUserId(userId);
+      if (!(cart)) {
+        await queryRunner.rollbackTransaction();
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Cart is empty',
+        };
+      }
+
+      const { id: cartId, items } = cart;
+      const total = calculateCartTotal(cart);
+
+      const order = await this.orderService.createOrder(
+        {
+          ...body,
+          userId,
+          cartId,
+          items,
+          total,
+        },
+        queryRunner,
+      );
+
+      cart.status = CartStatus.ORDERED;
+      await this.cartService.updateCartStatus(cartId, CartStatus.ORDERED, queryRunner);
+
+      // await this.cartService.removeByUserId(userId);
+
+      await queryRunner.commitTransaction();
 
       return {
-        statusCode,
-        message: 'Cart is empty',
+        statusCode: HttpStatus.OK,
+        message: 'OK',
+        data: { order },
       };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    const { id: cartId, items } = cart;
-    const total = calculateCartTotal(cart);
-    const order = this.orderService.create({
-      ...body, // TODO: validate and pick only necessary data
-      userId,
-      cartId,
-      items,
-      total,
-    });
-    this.cartService.removeByUserId(userId);
-
-    return {
-      statusCode: HttpStatus.OK,
-      message: 'OK',
-      data: { order },
-    };
   }
 }

@@ -25,29 +25,29 @@ export class AppController {
     };
   }
 
-  @UseGuards(LocalAuthGuard)
-  @Post('api/auth/login')
-  async login(@Request() req: any) {
-    const token = this.authService.login(req.user, 'basic');
+  // @UseGuards(LocalAuthGuard)
+  // @Post('api/auth/login')
+  // async login(@Request() req: any) {
+  //   const token = this.authService.login(req.user, 'basic');
+  //   console.log('i am here')
+  //   return {
+  //     statusCode: HttpStatus.OK,
+  //     message: 'OK',
+  //     data: {
+  //       ...token,
+  //     },
+  //   };
+  // }
 
-    return {
-      statusCode: HttpStatus.OK,
-      message: 'OK',
-      data: {
-        ...token,
-      },
-    };
-  }
-
-  @UseGuards(BasicAuthGuard)
-  @Get('api/profile')
-  async getProfile(@Request() req) {
-    return {
-      statusCode: HttpStatus.OK,
-      message: 'OK',
-      data: {
-        user: req.user,
-      },
-    };
-  }
+  // @UseGuards(BasicAuthGuard)
+  // @Get('api/profile')
+  // async getProfile(@Request() req) {
+  //   return {
+  //     statusCode: HttpStatus.OK,
+  //     message: 'OK',
+  //     data: {
+  //       user: req.user,
+  //     },
+  //   };
+  // }
 }

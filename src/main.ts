@@ -21,7 +21,7 @@ async function bootstrap() {
     return serverlessExpress({ app: expressApp }); // Возвращение серверного обработчика для Lambda
   } else {
     // Код для локального запуска
-    const port = process.env.PORT || 3000;
+    const port = process.env.PORT || 4000;
     expressApp.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
     });

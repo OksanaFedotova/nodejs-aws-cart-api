@@ -1,7 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { CartItem } from './cart-item.entity';
+import { Order } from './order.entity';
 
-enum CartStatuses {
+export enum CartStatus {
   OPEN = 'OPEN',
   ORDERED = 'ORDERED',
 }
@@ -22,11 +30,14 @@ export class Cart {
 
   @Column({
     type: 'enum',
-    enum: CartStatuses,
-    default: CartStatuses.OPEN,
+    enum: CartStatus,
+    default: CartStatus.OPEN,
   })
-  status: CartStatuses;
+  status: CartStatus;
 
-  @OneToMany(() => CartItem, (item) => item.cart)
+  @OneToMany(() => CartItem, (cartItem) => cartItem.cart)
   items: CartItem[];
+
+  @OneToMany(() => Order, (order) => order.cart)
+  orders?: Order[];
 }

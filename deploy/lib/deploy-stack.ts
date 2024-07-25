@@ -6,7 +6,7 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 export class DeployStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    // LambdaNestStack in stack.ts
+
     const handler = new lambda.Function(this, 'NestHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'main.handler',
@@ -15,17 +15,20 @@ export class DeployStack extends cdk.Stack {
         NODE_ENV: 'production',
       },
     });
-    // Создание API Gateway
+
     const api = new apigateway.RestApi(this, 'NestApi');
 
     const integration = new apigateway.LambdaIntegration(handler);
 
-    // Интеграция с корневым ресурсом
+
     api.root.addProxy({
       defaultIntegration: integration,
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+      },
     });
 
-    // Вывод URL API Gateway
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
     });
