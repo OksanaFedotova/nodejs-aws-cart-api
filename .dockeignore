@@ -1,0 +1,10 @@
+# Исключаем папку с CDK
+deploy/
+
+# Исключаем другие временные файлы и каталоги
+node_modules/
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore

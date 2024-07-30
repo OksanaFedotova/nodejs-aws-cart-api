@@ -18,11 +18,11 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV === 'production') {
     // Код для AWS Lambda
-    return serverlessExpress({ app: expressApp }); // Возвращение серверного обработчика для Lambda
+    return serverlessExpress({ app: expressApp }); // Возвращ ение серверного обработчика для Lambda
   } else {
     // Код для локального запуска
-    const port = process.env.PORT || 4000;
-    expressApp.listen(port, () => {
+    const port = process.env.PORT || 3000;
+    expressApp.listen(port, '0.0.0.0', () => {
       console.log(`Server is running on http://localhost:${port}`);
     });
     return null; // Для локального запуска не требуется возвращать серверный обработчик
