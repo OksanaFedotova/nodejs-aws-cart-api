@@ -4,7 +4,7 @@ services:
     build: .
     env_file: .env
     environment: 
-      PORT: ${PORT}
+      PORT: 4000
     ports:
-      - ${PORT}:${PORT}
+      - 4000:4000
     command: npm run start:prod
