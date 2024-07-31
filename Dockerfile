@@ -1,4 +1,3 @@
-# Stage 1: Build
 FROM node:18 AS build
 
 WORKDIR /app
@@ -8,6 +7,7 @@ RUN npm install
 
 COPY . .
 
+ENV PORT 4000
 EXPOSE 4000
 
 CMD ["npm", "run", "start:prod"]
