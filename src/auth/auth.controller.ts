@@ -1,14 +1,11 @@
 import { Controller, Post, Body, Headers, HttpStatus, HttpException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/services/users.service';
 import { CreateUserDto } from 'src/users/dto';
-//import { User } from '../users/models'; 
 
 @Controller('api/auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly usersService: UsersService, // Если нужно использовать UsersService
   ) {}
 
   @Post('login')

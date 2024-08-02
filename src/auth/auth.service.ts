@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/services/users.service';
 import { User } from '../users/models';
-import { contentSecurityPolicy } from 'helmet';
+import { UserNotFoundException, InvalidPasswordException } from './exceptions'
 
 @Injectable()
 export class AuthService {
@@ -11,13 +11,18 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
- async validateUser(username: string, password: string) {
+  async validateUser(username: string, password: string): Promise<User> {
     const user = await this.usersService.findOne(username);
-    if (user && user.password === password) {
-      return user;
+
+    if (!user) {
+      throw new UserNotFoundException(username); 
     }
 
-    return this.usersService.create({ username, password });
+    if (user.password !== password) {
+      throw new InvalidPasswordException(); 
+    }
+
+    return user;
   }
 
   login(user: User, type: string) {
@@ -41,10 +46,9 @@ export class AuthService {
   }
 
   loginBasic(user: User) {
-
     function encodeUserToken(user) {
-      const { id, name, password } = user;
-      const buf = Buffer.from([name, password].join(':'), 'utf8');
+      const { username, password } = user; // Используйте username вместо name
+      const buf = Buffer.from([username, password].join(':'), 'utf8');
 
       return buf.toString('base64');
     }
